@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Multimedia</string>
+    <string name="take_a_photo">Take a photo</string>
+    <string name="record_a_video">record a video</string>
+    <string name="record_a_voice">record a voice</string>
+    <string name="photo">Photo</string>
+    <string name="video">Video</string>
+    <string name="voice">Voice</string>
+</resources>
