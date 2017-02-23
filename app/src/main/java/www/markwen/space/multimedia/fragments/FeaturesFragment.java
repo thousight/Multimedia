@@ -1,5 +1,6 @@
 package www.markwen.space.multimedia.fragments;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
@@ -9,8 +10,11 @@ import android.support.v4.content.FileProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+
+import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -28,6 +32,7 @@ import static android.os.Environment.getExternalStorageDirectory;
 public class FeaturesFragment extends Fragment {
 
     FrameLayout cameraCard, camcorderCard, micCard;
+    Button recordButton, stopButton;
     final int REQUEST_IMAGE_CAPTURE = 1;
     final int REQUEST_VIDEO_CAPTURE = 2;
 
@@ -71,11 +76,46 @@ public class FeaturesFragment extends Fragment {
             }
         });
 
-        // Start recording voice
+        // Start dialog for recording audio
         micCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
+                // Audio recording dialog
+                MaterialDialog audioDialog = new MaterialDialog.Builder(getActivity())
+                        .title("Press button to start recording...")
+                        .customView(R.layout.voice_dialog, true)
+                        .dismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+
+                            }
+                        }).show();
+
+                // Get buttons in the dialog
+                View dialogCustomView = audioDialog.getCustomView();
+                if (dialogCustomView != null) {
+                    // Get buttons
+                    recordButton = (Button) dialogCustomView.findViewById(R.id.recordButton);
+                    stopButton = (Button) dialogCustomView.findViewById(R.id.stopButton);
+                    stopButton.setVisibility(View.GONE);
+
+                    recordButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            recordButton.setVisibility(View.GONE);
+                            stopButton.setVisibility(View.VISIBLE);
+                        }
+                    });
+
+                    stopButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            recordButton.setVisibility(View.VISIBLE);
+                            stopButton.setVisibility(View.GONE);
+                        }
+                    });
+                }
             }
         });
 

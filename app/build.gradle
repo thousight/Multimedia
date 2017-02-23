@@ -34,5 +34,7 @@ dependencies {
     // Optional: see how to use the utility.
     compile 'com.ogaclejapan.smarttablayout:utils-v4:1.6.1@aar'
 
+    // Material Dialog
+    compile 'com.afollestad.material-dialogs:core:0.9.3.0'
     testCompile 'junit:junit:4.12'
 }
