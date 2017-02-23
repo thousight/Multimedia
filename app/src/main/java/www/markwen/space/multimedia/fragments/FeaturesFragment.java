@@ -1,11 +1,8 @@
 package www.markwen.space.multimedia.fragments;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.FileProvider;
@@ -32,7 +29,7 @@ public class FeaturesFragment extends Fragment {
 
     FrameLayout cameraCard, camcorderCard, micCard;
     final int REQUEST_IMAGE_CAPTURE = 1;
-    String currentPhotoPath = "";
+    final int REQUEST_VIDEO_CAPTURE = 2;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -42,26 +39,39 @@ public class FeaturesFragment extends Fragment {
         camcorderCard = (FrameLayout)view.findViewById(R.id.VideoLayout);
         micCard = (FrameLayout)view.findViewById(R.id.MicLayout);
 
+        // Start taking photo
         cameraCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                currentPhotoPath = getExternalStorageDirectory() + "/Multimedia/" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".jpg";
-                File photo = new File(currentPhotoPath);
+                // Create photo file
+                File photo = new File(getExternalStorageDirectory() + "/Multimedia/" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".jpg");
+                // Save intent result to the file
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(getContext(), "www.markwen.space.fileprovider", photo));
                 if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                    // Start intent to take the picture
                     startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
                 }
             }
         });
 
+        // Start recording video
         camcorderCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+                // Create video file
+                File video = new File(getExternalStorageDirectory() + "/Multimedia/" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".mp4");
+                // Save intent result to the file
+                takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(getContext(), "www.markwen.space.fileprovider", video));
+                if (takeVideoIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                    // Start intent to take the video
+                    startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+                }
             }
         });
 
+        // Start recording voice
         micCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,13 +84,27 @@ public class FeaturesFragment extends Fragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Photo
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == -1) {
-            Uri image = data.getData();
-            if (image != null) {
+            Uri imageUrl = data.getData();
+            if (imageUrl != null) {
+                // Announce picture to let other photo galleries to update
                 Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                mediaScanIntent.setData(image);
+                mediaScanIntent.setData(imageUrl);
                 getActivity().sendBroadcast(mediaScanIntent);
                 Toast.makeText(getContext(), "Image saved to gallery", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        // Video
+        if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == -1) {
+            Uri videoUri = data.getData();
+            if (videoUri != null) {
+                // Announce video to let other photo galleries to update
+                Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                mediaScanIntent.setData(videoUri);
+                getActivity().sendBroadcast(mediaScanIntent);
+                Toast.makeText(getContext(), "Video saved to gallery", Toast.LENGTH_LONG).show();
             }
         }
     }
