@@ -6,4 +6,6 @@
     <string name="photo">Photo</string>
     <string name="video">Video</string>
     <string name="voice">Voice</string>
+    <string name="feature_title">Feature</string>
+    <string name="gallery_title">Gallery</string>
 </resources>
