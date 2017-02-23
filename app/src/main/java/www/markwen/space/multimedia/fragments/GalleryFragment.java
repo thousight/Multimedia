@@ -1,12 +1,8 @@
 package www.markwen.space.multimedia.fragments;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -24,6 +20,12 @@ import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DecodeFormat;
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
+import com.bumptech.glide.load.resource.bitmap.FileDescriptorBitmapDecoder;
+import com.bumptech.glide.load.resource.bitmap.VideoBitmapDecoder;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -46,6 +48,7 @@ public class GalleryFragment extends Fragment {
     AppCompatSpinner sortSpinner;
     GridView galleryGridView;
     FilesAdapter filesAdapter;
+    TextToSpeech tts;
     ArrayList<File> filesList = new ArrayList<>();
     final String directory = getExternalStorageDirectory() + "/Multimedia/";
 
@@ -90,14 +93,29 @@ public class GalleryFragment extends Fragment {
         });
         Collections.addAll(filesList, getFiles);
 
+        // Set up TTS
+        tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    tts.setLanguage(Locale.US);
+                }
+            }
+        });
 
         // Set up gridview
-        filesAdapter = new FilesAdapter(getContext(), filesList);
+        filesAdapter = new FilesAdapter(getContext(), filesList, tts);
         galleryGridView.setAdapter(filesAdapter);
 
         return view;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        tts.stop();
+        tts.shutdown();
+    }
 
     // GridView files Adapter
     private class FilesAdapter extends BaseAdapter {
@@ -105,17 +123,10 @@ public class GalleryFragment extends Fragment {
         ArrayList<File> list = new ArrayList<>();
         TextToSpeech tts;
 
-        public FilesAdapter(Context context, ArrayList<File> list) {
+        public FilesAdapter(Context context, ArrayList<File> list, TextToSpeech tts) {
             this.context = context;
             this.list = list;
-            tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
-                @Override
-                public void onInit(int status) {
-                    if (status == TextToSpeech.SUCCESS) {
-                        tts.setLanguage(Locale.US);
-                    }
-                }
-            });
+            this. tts = tts;
         }
 
         class ViewHolder {
@@ -170,7 +181,7 @@ public class GalleryFragment extends Fragment {
 
                                     case R.id.readTitle:
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                            tts.speak(file.getName(),TextToSpeech.QUEUE_FLUSH,null,null);
+                                            tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
                                         } else {
                                             tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null);
                                         }
@@ -199,16 +210,20 @@ public class GalleryFragment extends Fragment {
             // Set title and date
             viewHolder.fileName.setText(file.getName());
             viewHolder.dateCreated.setText(date);
-            // Loading image
-//            if (file.getAbsolutePath().endsWith(".jpg")) {
-//                Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(file.getAbsolutePath()),
-//                        128, 128);
-//                viewHolder.fileImageView.setImageBitmap(thumbnail);
-//            } else if (file.getAbsolutePath().endsWith(".mp4")) {
-//                Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(file.getAbsolutePath(),
-//                        MediaStore.Images.Thumbnails.MINI_KIND);
-//                viewHolder.fileImageView.setImageBitmap(thumbnail);
-//            }
+            if (file.getAbsolutePath().endsWith(".jpg")) {
+                // Loading image
+                Glide
+                        .with(context)
+                        .load(file.getAbsolutePath())
+                        .centerCrop()
+                        .crossFade()
+                        .into(viewHolder.fileImageView);
+            } else if (file.getAbsolutePath().endsWith(".mp4")) {
+                // Capture and show one frame of the video
+                Glide.with(context)
+                        .load(Uri.fromFile(file))
+                        .into(viewHolder.fileImageView);
+            }
 
             return convertView;
         }

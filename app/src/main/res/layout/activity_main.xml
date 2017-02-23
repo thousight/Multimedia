@@ -10,7 +10,7 @@
     <com.ogaclejapan.smarttablayout.SmartTabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="42dp"
         android:background="@color/colorPrimary"
         app:stl_indicatorAlwaysInCenter="false"
         app:stl_indicatorWithoutPadding="false"

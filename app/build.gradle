@@ -36,5 +36,9 @@ dependencies {
 
     // Material Dialog
     compile 'com.afollestad.material-dialogs:core:0.9.3.0'
+
+    // Glide
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+
     testCompile 'junit:junit:4.12'
 }
