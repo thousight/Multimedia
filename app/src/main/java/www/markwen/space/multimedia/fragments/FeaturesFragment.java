@@ -77,11 +77,6 @@ public class FeaturesFragment extends Fragment {
                 mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
                 mediaRecorder.setOutputFile(directory + filename[0]);
                 mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-                try {
-                    mediaRecorder.prepare();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
                 // Audio recording dialog
                 final MaterialDialog audioDialog = new MaterialDialog.Builder(getActivity())
@@ -93,6 +88,9 @@ public class FeaturesFragment extends Fragment {
                                 // if dialog is dismissed, then cancel recording
                                 if (isRecording[0]) {
                                     mediaRecorder.stop();
+                                    mediaRecorder.release();
+                                    Toast.makeText(getContext(), filename[0] + " is saved to gallery", Toast.LENGTH_LONG).show();
+                                    isRecording[0] = false;
                                 }
                                 mediaRecorder = null;
                             }
@@ -115,6 +113,11 @@ public class FeaturesFragment extends Fragment {
                             audioDialog.setTitle("Press button to stop and save...");
 
                             // Start recording
+                            try {
+                                mediaRecorder.prepare();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                             mediaRecorder.start();
                             isRecording[0] = true;
                         }
@@ -132,10 +135,10 @@ public class FeaturesFragment extends Fragment {
                             mediaRecorder.release();
                             mediaRecorder = null;
                             isRecording[0] = false;
+                            Toast.makeText(getContext(), filename[0] + " is saved to gallery", Toast.LENGTH_LONG).show();
 
                             // Dismiss dialog and finish
                             audioDialog.dismiss();
-                            Toast.makeText(getContext(), filename[0] + " is saved to gallery", Toast.LENGTH_LONG).show();
                         }
                     });
                 }
