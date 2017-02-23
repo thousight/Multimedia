@@ -12,8 +12,8 @@
         android:paddingRight="11dp"
         android:layout_margin="6dp"
         android:background="@drawable/record_button"
-        android:drawableStart="@drawable/ic_fiber_manual_record_white_48px"
-        android:drawableLeft="@drawable/ic_fiber_manual_record_white_48px"/>
+        android:drawableStart="@drawable/ic_mic_white_48px"
+        android:drawableLeft="@drawable/ic_mic_white_48px"/>
 
     <Button
         android:id="@+id/stopButton"

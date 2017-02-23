@@ -67,6 +67,7 @@ public class GalleryFragment extends Fragment {
         sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Sorting the list by
                 if (position == 0) { // Date
 
                 } else { // Type
@@ -164,7 +165,7 @@ public class GalleryFragment extends Fragment {
                         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                             @Override
                             public boolean onMenuItemClick(MenuItem item) {
-
+                                // Text-to-speech
                                 switch (item.getItemId()) {
 
                                     case R.id.readTitle:
@@ -195,8 +196,10 @@ public class GalleryFragment extends Fragment {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
 
+            // Set title and date
             viewHolder.fileName.setText(file.getName());
             viewHolder.dateCreated.setText(date);
+            // Loading image
 //            if (file.getAbsolutePath().endsWith(".jpg")) {
 //                Bitmap thumbnail = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(file.getAbsolutePath()),
 //                        128, 128);
