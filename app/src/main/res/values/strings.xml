@@ -8,4 +8,6 @@
     <string name="voice">Voice</string>
     <string name="feature_title">Features</string>
     <string name="gallery_title">Gallery</string>
+    <string name="sort_by">Sort by: </string>
+    <string name="file_image">File image</string>
 </resources>

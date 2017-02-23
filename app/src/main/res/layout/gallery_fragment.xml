@@ -3,10 +3,37 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-<TextView
-    android:text="Gallery"
-    android:gravity="center"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        >
+        <TextView
+            android:text="@string/sort_by"
+            android:textSize="17sp"
+            android:textColor="@color/colorPrimary"
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_toStartOf="@+id/sortSpinner"
+            android:layout_toLeftOf="@+id/sortSpinner" />
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/sortSpinner"
+            android:layout_width="100dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true" />
+    </RelativeLayout>
+
+    <GridView
+        android:id="@+id/galleryGridView"
+        android:gravity="center"
+        android:columnWidth="140dp"
+        android:numColumns="auto_fit"
+        android:verticalSpacing="16dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:stretchMode="spacingWidthUniform"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </LinearLayout>
