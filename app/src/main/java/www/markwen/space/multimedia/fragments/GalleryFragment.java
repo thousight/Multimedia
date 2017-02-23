@@ -1,11 +1,18 @@
 package www.markwen.space.multimedia.fragments;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.speech.tts.TextToSpeech;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -53,6 +60,27 @@ public class GalleryFragment extends Fragment {
     final String directory = getExternalStorageDirectory() + "/Multimedia/";
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Request permission
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+            int ReadStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE);
+            int WriteStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int CameraPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA);
+            int RecordAudioPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO);
+
+            if (ReadStoragePermissionCheck == -1 || WriteStoragePermissionCheck == -1 || CameraPermissionCheck == -1 || RecordAudioPermissionCheck == -1) {
+                requestPermissions(new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO
+                }, 1);
+            }
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.gallery_fragment, container, false);
 
@@ -85,13 +113,15 @@ public class GalleryFragment extends Fragment {
         });
 
         // Get files from directory with filter
-        File[] getFiles = new File(directory).listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
-            }
-        });
-        Collections.addAll(filesList, getFiles);
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
+            File[] getFiles = new File(directory).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+                }
+            });
+            Collections.addAll(filesList, getFiles);
+        }
 
         // Set up TTS
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
@@ -108,6 +138,23 @@ public class GalleryFragment extends Fragment {
         galleryGridView.setAdapter(filesAdapter);
 
         return view;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
+            filesList.clear();
+            filesAdapter.notifyDataSetChanged();
+            File[] getFiles = new File(directory).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+                }
+            });
+            Collections.addAll(filesList, getFiles);
+            filesAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -161,10 +208,26 @@ public class GalleryFragment extends Fragment {
                 LayoutInflater vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = vi.inflate(R.layout.file_item, parent, false);
 
-                viewHolder.fileImageView = (ImageView) convertView.findViewById(R.id.fileImageView);
                 viewHolder.dateCreated = (TextView)convertView.findViewById(R.id.dateCreated);
                 viewHolder.fileName = (TextView)convertView.findViewById(R.id.fileName);
                 viewHolder.menuButton = (ImageButton) convertView.findViewById(R.id.menuButton);
+
+                viewHolder.fileImageView = (ImageView) convertView.findViewById(R.id.fileImageView);
+                viewHolder.fileImageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Uri uri = Uri.parse(file.getAbsolutePath());
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        if (file.getAbsolutePath().endsWith(".jpg")) {
+                            intent.setDataAndType(uri, "image/jpg");
+                        } else if (file.getAbsolutePath().endsWith(".mp4")) {
+                            intent.setDataAndType(uri, "video/mp4");
+                        } else if (file.getAbsolutePath().endsWith(".mp3")) {
+                            intent.setDataAndType(uri, "audio/mp3");
+                        }
+                        startActivity(intent);
+                    }
+                });
 
                 convertView.setTag(viewHolder);
                 viewHolder.menuButton.setOnClickListener(new View.OnClickListener() {
