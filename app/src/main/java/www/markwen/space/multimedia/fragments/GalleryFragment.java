@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -216,14 +217,15 @@ public class GalleryFragment extends Fragment {
                 viewHolder.fileImageView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Uri uri = Uri.parse(file.getAbsolutePath());
+                        String filePath = file.getAbsolutePath();
+                        Uri uri = Uri.parse(filePath);
                         Intent intent = new Intent(Intent.ACTION_VIEW);
-                        if (file.getAbsolutePath().endsWith(".jpg")) {
-                            intent.setDataAndType(uri, "image/jpg");
-                        } else if (file.getAbsolutePath().endsWith(".mp4")) {
+                        if (filePath.endsWith(".jpg")) {
+                            intent.setDataAndType(uri, "image/*");
+                        } else if (filePath.endsWith(".mp4")) {
                             intent.setDataAndType(uri, "video/mp4");
-                        } else if (file.getAbsolutePath().endsWith(".mp3")) {
-                            intent.setDataAndType(uri, "audio/mp3");
+                        } else if (filePath.endsWith(".mp3")) {
+                            intent.setDataAndType(uri, "audio/*");
                         }
                         startActivity(intent);
                     }

@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -39,6 +40,7 @@ public class FeaturesFragment extends Fragment {
     final int REQUEST_IMAGE_CAPTURE = 1;
     final int REQUEST_VIDEO_CAPTURE = 2;
     final String directory = getExternalStorageDirectory() + "/Multimedia/";
+    String filename = "";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -192,7 +194,13 @@ public class FeaturesFragment extends Fragment {
             Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             mediaScanIntent.setData(imageUrl);
             getActivity().sendBroadcast(mediaScanIntent);
-            Toast.makeText(getContext(), "Image saved to gallery", Toast.LENGTH_LONG).show();
+            try {
+                MediaStore.Images.Media.insertImage(getContext().getContentResolver(), directory + filename, "Multimedia-Image", "Multimedia-Image");
+                Toast.makeText(getContext(), "Image saved to gallery", Toast.LENGTH_LONG).show();
+                filename = "";
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -208,6 +216,7 @@ public class FeaturesFragment extends Fragment {
     }
     
     private String getFileDirectory(String extension) {
-        return directory + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + extension;
+        filename = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + extension;
+        return directory + filename;
     }
 }
