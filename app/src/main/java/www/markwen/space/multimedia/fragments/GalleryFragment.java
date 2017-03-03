@@ -196,6 +196,7 @@ public class GalleryFragment extends Fragment {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             final File file = list.get(position);
+            final String filePath = file.getAbsolutePath();
             ViewHolder viewHolder;
             final String date = new SimpleDateFormat("MM/dd/YYYY", Locale.US).format(new Date(file.lastModified()));
 
@@ -207,65 +208,9 @@ public class GalleryFragment extends Fragment {
                 viewHolder.dateCreated = (TextView)convertView.findViewById(R.id.dateCreated);
                 viewHolder.fileName = (TextView)convertView.findViewById(R.id.fileName);
                 viewHolder.menuButton = (ImageButton) convertView.findViewById(R.id.menuButton);
-
                 viewHolder.fileImageView = (ImageView) convertView.findViewById(R.id.fileImageView);
-                viewHolder.fileImageView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        String filePath = file.getAbsolutePath();
-                        Uri uri = Uri.parse(filePath);
-                        if (filePath.endsWith(".jpg")) {
-                            Intent previewIntent = new Intent(context, PreviewActivity.class);
-                            previewIntent.putExtra("imagePath", filePath);
-                            context.startActivity(previewIntent);
-                        } else if (filePath.endsWith(".mp4")) {
-                            // Video preview
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
-                            intent.setDataAndType(uri, "video/mp4");
-                            startActivity(intent);
-                        } else if (filePath.endsWith(".mp3")) {
-
-                        }
-                    }
-                });
 
                 convertView.setTag(viewHolder);
-                viewHolder.menuButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        PopupMenu popup = new PopupMenu(context, v);
-                        MenuInflater inflater = popup.getMenuInflater();
-                        inflater.inflate(R.menu.file_menu, popup.getMenu());
-                        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                            @Override
-                            public boolean onMenuItemClick(MenuItem item) {
-                                // Text-to-speech
-                                switch (item.getItemId()) {
-
-                                    case R.id.readTitle:
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                            tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
-                                        } else {
-                                            tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null);
-                                        }
-                                        return true;
-
-                                    case R.id.readDate:
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                            tts.speak("Created at: " + date, TextToSpeech.QUEUE_FLUSH, null, null);
-                                        } else {
-                                            tts.speak("Created at: " + date, TextToSpeech.QUEUE_FLUSH, null);
-                                        }
-                                        return true;
-
-                                    default:
-                                }
-                                return false;
-                            }
-                        });
-                        popup.show();
-                    }
-                });
             } else {
                 viewHolder = (ViewHolder) convertView.getTag();
             }
@@ -277,18 +222,74 @@ public class GalleryFragment extends Fragment {
                 // Loading image
                 Glide
                         .with(context)
-                        .load(file.getAbsolutePath())
+                        .load(filePath)
                         .centerCrop()
                         .crossFade()
                         .into(viewHolder.fileImageView);
             } else if (file.getAbsolutePath().endsWith(".mp4")) {
                 // Capture and show one frame of the video
                 Glide.with(context)
-                        .load(Uri.fromFile(file))
+                        .load(filePath)
                         .into(viewHolder.fileImageView);
             } else {
                 viewHolder.fileImageView.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_music_note_black_48px, null));
             }
+
+            viewHolder.fileImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Uri uri = Uri.parse(filePath);
+                    if (filePath.endsWith(".jpg")) {
+                        Intent previewIntent = new Intent(context, PreviewActivity.class);
+                        previewIntent.putExtra("imagePath", filePath);
+                        startActivity(previewIntent);
+                    } else if (filePath.endsWith(".mp4")) {
+                        // Video preview
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(uri, "video/mp4");
+                        startActivity(intent);
+                    } else if (filePath.endsWith(".mp3")) {
+
+                    }
+                }
+            });
+
+            viewHolder.menuButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    PopupMenu popup = new PopupMenu(context, v);
+                    MenuInflater inflater = popup.getMenuInflater();
+                    inflater.inflate(R.menu.file_menu, popup.getMenu());
+                    popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+                            // Text-to-speech
+                            switch (item.getItemId()) {
+
+                                case R.id.readTitle:
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                        tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null, null);
+                                    } else {
+                                        tts.speak(file.getName(), TextToSpeech.QUEUE_FLUSH, null);
+                                    }
+                                    return true;
+
+                                case R.id.readDate:
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                        tts.speak("Created at: " + date, TextToSpeech.QUEUE_FLUSH, null, null);
+                                    } else {
+                                        tts.speak("Created at: " + date, TextToSpeech.QUEUE_FLUSH, null);
+                                    }
+                                    return true;
+
+                                default:
+                            }
+                            return false;
+                        }
+                    });
+                    popup.show();
+                }
+            });
 
             return convertView;
         }
