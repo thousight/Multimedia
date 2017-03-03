@@ -20,6 +20,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".PreviewActivity" />
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="www.markwen.space.fileprovider"
