@@ -5,15 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -30,10 +28,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DecodeFormat;
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
-import com.bumptech.glide.load.resource.bitmap.FileDescriptorBitmapDecoder;
-import com.bumptech.glide.load.resource.bitmap.VideoBitmapDecoder;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -43,6 +37,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 
+import www.markwen.space.multimedia.PreviewActivity;
 import www.markwen.space.multimedia.R;
 
 import static android.os.Environment.getExternalStorageDirectory;
@@ -219,15 +214,18 @@ public class GalleryFragment extends Fragment {
                     public void onClick(View v) {
                         String filePath = file.getAbsolutePath();
                         Uri uri = Uri.parse(filePath);
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
                         if (filePath.endsWith(".jpg")) {
-                            intent.setDataAndType(uri, "image/*");
+                            Intent previewIntent = new Intent(context, PreviewActivity.class);
+                            previewIntent.putExtra("imagePath", filePath);
+                            context.startActivity(previewIntent);
                         } else if (filePath.endsWith(".mp4")) {
+                            // Video preview
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
                             intent.setDataAndType(uri, "video/mp4");
+                            startActivity(intent);
                         } else if (filePath.endsWith(".mp3")) {
-                            intent.setDataAndType(uri, "audio/*");
+
                         }
-                        startActivity(intent);
                     }
                 });
 
@@ -288,6 +286,8 @@ public class GalleryFragment extends Fragment {
                 Glide.with(context)
                         .load(Uri.fromFile(file))
                         .into(viewHolder.fileImageView);
+            } else {
+                viewHolder.fileImageView.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_music_note_black_48px, null));
             }
 
             return convertView;
