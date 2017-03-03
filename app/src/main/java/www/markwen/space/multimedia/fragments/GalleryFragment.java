@@ -44,7 +44,9 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 
@@ -103,22 +105,6 @@ public class GalleryFragment extends Fragment {
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, sortingOptions);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sortSpinner.setAdapter(spinnerAdapter);
-        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // Sorting the list by
-                if (position == 0) { // Date
-
-                } else { // Type
-
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
 
         // Get files from directory with filter
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
@@ -129,7 +115,41 @@ public class GalleryFragment extends Fragment {
                 }
             });
             Collections.addAll(filesList, getFiles);
+            Collections.sort(filesList, BY_DATE);
         }
+
+        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Sorting the list by
+                if (position == 0) { // Date
+                    Collections.sort(filesList, BY_DATE);
+                } else { // Type
+                    final char[] f1Type = new char[1];
+                    final char[] f2Type = new char[1];
+                    Collections.sort(filesList, new Comparator<File>() {
+                        @Override
+                        public int compare(File f1, File f2) {
+                            f1Type[0] = f1.getAbsolutePath().charAt(f1.getAbsolutePath().length() - 1);
+                            f2Type[0] = f2.getAbsolutePath().charAt(f2.getAbsolutePath().length() - 1);
+                            if (f1Type[0] > f2Type[0]) {
+                                return 1;
+                            } else if (f1Type[0] < f2Type[0]) {
+                                return -1;
+                            } else {
+                                return 0;
+                            }
+                        }
+                    });
+                }
+                filesAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         // Set up TTS
         tts = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
@@ -171,5 +191,18 @@ public class GalleryFragment extends Fragment {
         tts.stop();
         tts.shutdown();
     }
+
+    Comparator<File> BY_DATE = new Comparator<File>() {
+        @Override
+        public int compare(File f1, File f2) {
+            if (f1.lastModified() > f2.lastModified()) {
+                return -1;
+            } else if (f1.lastModified() < f2.lastModified()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    };
 
 }
