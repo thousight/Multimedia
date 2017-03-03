@@ -1,10 +1,15 @@
 package www.markwen.space.multimedia.fragments;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -12,6 +17,7 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
+import android.support.v7.widget.AppCompatSeekBar;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -22,15 +28,19 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -130,7 +140,7 @@ public class GalleryFragment extends Fragment {
         });
 
         // Set up gridview
-        filesAdapter = new FilesAdapter(getContext(), filesList, tts);
+        filesAdapter = new FilesAdapter(getContext(), getActivity(), filesList, tts);
         galleryGridView.setAdapter(filesAdapter);
 
         return view;
@@ -163,13 +173,16 @@ public class GalleryFragment extends Fragment {
     // GridView files Adapter
     private class FilesAdapter extends BaseAdapter {
         Context context;
+        Activity activity;
         ArrayList<File> list = new ArrayList<>();
         TextToSpeech tts;
+        MediaPlayer player;
 
-        public FilesAdapter(Context context, ArrayList<File> list, TextToSpeech tts) {
+        public FilesAdapter(Context context, Activity activity, ArrayList<File> list, TextToSpeech tts) {
             this.context = context;
+            this.activity = activity;
             this.list = list;
-            this. tts = tts;
+            this.tts = tts;
         }
 
         class ViewHolder {
@@ -200,6 +213,7 @@ public class GalleryFragment extends Fragment {
             ViewHolder viewHolder;
             final String date = new SimpleDateFormat("MM/dd/YYYY", Locale.US).format(new Date(file.lastModified()));
 
+            // Setting view holder
             if (convertView == null) {
                 viewHolder = new ViewHolder();
                 LayoutInflater vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -235,11 +249,13 @@ public class GalleryFragment extends Fragment {
                 viewHolder.fileImageView.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_music_note_black_48px, null));
             }
 
+            // Click image to preview items
             viewHolder.fileImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Uri uri = Uri.parse(filePath);
                     if (filePath.endsWith(".jpg")) {
+                        // Image preview
                         Intent previewIntent = new Intent(context, PreviewActivity.class);
                         previewIntent.putExtra("imagePath", filePath);
                         startActivity(previewIntent);
@@ -248,12 +264,14 @@ public class GalleryFragment extends Fragment {
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setDataAndType(uri, "video/mp4");
                         startActivity(intent);
-                    } else if (filePath.endsWith(".mp3")) {
-
+                    } else {
+                        // Audio preview
+                        previewAudio(uri, file.getName());
                     }
                 }
             });
 
+            // Popup menu for TTS
             viewHolder.menuButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -292,6 +310,110 @@ public class GalleryFragment extends Fragment {
             });
 
             return convertView;
+        }
+
+        private void previewAudio(final Uri file, String fileName) {
+            final boolean[] isPlaying = {false};
+
+            final MaterialDialog audioDialog = new MaterialDialog.Builder(getActivity())
+                    .title(fileName)
+                    .customView(R.layout.play_sound_dialog, true)
+                    .dismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialog) {
+                            // if dialog is dismissed, then cancel recording
+                            if (isPlaying[0]) {
+                                stopPlaying(isPlaying[0]);
+                            }
+                        }
+                    }).show();
+
+            // Get buttons in the dialog
+            View dialogCustomView = audioDialog.getCustomView();
+            if (dialogCustomView != null) {
+                // Get buttons
+                final Button playButton = (Button) dialogCustomView.findViewById(R.id.playButton);
+                final Button stopButton = (Button) dialogCustomView.findViewById(R.id.stopButton);
+                final TextView progressText = (TextView) dialogCustomView.findViewById(R.id.playTimeText);
+                final AppCompatSeekBar progressBar = (AppCompatSeekBar) dialogCustomView.findViewById(R.id.seekBar);
+
+                // Initially disappear
+                stopButton.setVisibility(View.GONE);
+
+                // When play button is clicked
+                playButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Set up player
+                        player = new MediaPlayer();
+                        try {
+                            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                            player.setDataSource(context, file);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // When sound is finished playing
+                        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                            @Override
+                            public void onCompletion(MediaPlayer mediaPlayer) {
+                                progressBar.setProgress(100);
+                                progressText.setText((double)player.getDuration()/1000.00 + "/" + (double)player.getDuration()/1000.00);
+                                stopPlaying(isPlaying[0]);
+                                stopButton.setVisibility(View.GONE);
+                                playButton.setVisibility(View.VISIBLE);
+                            }
+                        });
+
+                        // Set view
+                        playButton.setVisibility(View.GONE);
+                        stopButton.setVisibility(View.VISIBLE);
+
+                        // Start playing
+                        try {
+                            player.prepare();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        player.start();
+                        isPlaying[0] = true;
+
+                        // Setting progress views
+                        final Handler handler = new Handler();
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (player != null) {
+                                    progressBar.setProgress(player.getCurrentPosition() / player.getDuration() * 100);
+                                    progressText.setText((double)player.getCurrentPosition()/1000.00 + "/" + (double)player.getDuration()/1000.00);
+                                }
+                                handler.postDelayed(this, 500);
+                            }
+                        });
+                    }
+                });
+
+                // When stop button is clicked
+                stopButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Set view
+                        playButton.setVisibility(View.VISIBLE);
+                        stopButton.setVisibility(View.GONE);
+
+                        // Stop
+                        stopPlaying(isPlaying[0]);
+                    }
+                });
+            }
+        }
+
+        private void stopPlaying(boolean status) {
+            if (player != null) {
+                player.stop();
+                player.reset();
+                status = false;
+                player = null;
+            }
         }
     }
 

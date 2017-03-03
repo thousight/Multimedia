@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center">
+
+    <android.support.v7.widget.AppCompatSeekBar
+        android:id="@+id/seekBar"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/playTimeText"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/playButton"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp"
+        android:layout_margin="6dp"
+        android:background="@drawable/record_button"
+        android:drawableStart="@drawable/ic_play_arrow_white_48px"
+        android:drawableLeft="@drawable/ic_play_arrow_white_48px"/>
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:paddingLeft="11dp"
+        android:paddingRight="11dp"
+        android:layout_margin="6dp"
+        android:background="@drawable/record_button"
+        android:drawableStart="@drawable/stop_button"
+        android:drawableLeft="@drawable/stop_button" />
+</LinearLayout>
