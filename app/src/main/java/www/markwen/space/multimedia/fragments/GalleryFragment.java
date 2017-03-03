@@ -1,58 +1,32 @@
 package www.markwen.space.multimedia.fragments;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.Build;
 import android.os.FileObserver;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
-import android.support.annotation.NonNull;
+
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.widget.AppCompatSeekBar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.AppCompatSpinner;
-import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import com.afollestad.materialdialogs.MaterialDialog;
-import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Locale;
 
 import www.markwen.space.multimedia.FilesAdapter;
-import www.markwen.space.multimedia.PreviewActivity;
 import www.markwen.space.multimedia.R;
 
 import static android.os.Environment.getExternalStorageDirectory;
@@ -65,6 +39,7 @@ public class GalleryFragment extends Fragment {
 
     AppCompatSpinner sortSpinner;
     GridView galleryGridView;
+    SwipeRefreshLayout refreshLayout;
     FilesAdapter filesAdapter;
     TextToSpeech tts;
     ArrayList<File> filesList = new ArrayList<>();
@@ -110,7 +85,7 @@ public class GalleryFragment extends Fragment {
             Arrays.sort(getFiles, BY_DATE);
         }
 
-        // FileObserver
+        // FileObserver, listen to changes in directory and update GridView
         fileObserver = new FileObserver(directory) {
             @Override
             public void onEvent(int i, String s) {
@@ -129,6 +104,7 @@ public class GalleryFragment extends Fragment {
         // Getting elements
         sortSpinner = (AppCompatSpinner)view.findViewById(R.id.sortSpinner);
         galleryGridView = (GridView)view.findViewById(R.id.galleryGridView);
+        refreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swipeRefresh);
 
         // Set up Spinner
         ArrayList<String> sortingOptions = new ArrayList<>();
@@ -188,6 +164,25 @@ public class GalleryFragment extends Fragment {
 
         refreshHandler.postDelayed(refreshList, 1000);
 
+        // Set up swipeRefresh
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                File[] updatedFiles = new File(directory).listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+                    }
+                });
+                Arrays.sort(updatedFiles, BY_DATE);
+                sortSpinner.setSelection(0);
+                filesList.clear();
+                Collections.addAll(filesList, updatedFiles);
+                filesAdapter.notifyDataSetChanged();
+                refreshLayout.setRefreshing(false);
+            }
+        });
+
         return view;
     }
 
@@ -224,6 +219,7 @@ public class GalleryFragment extends Fragment {
     };
 
     private void updateList() {
+        // Pull files again, sort it, and reset GridView
         File[] updatedFiles = new File(directory).listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
