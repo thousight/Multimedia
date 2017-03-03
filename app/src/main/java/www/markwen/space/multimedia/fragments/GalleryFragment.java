@@ -5,6 +5,7 @@ import android.os.FileObserver;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -58,21 +59,21 @@ public class GalleryFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Request permission
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
-            int ReadStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE);
-            int WriteStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            int CameraPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA);
-            int RecordAudioPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO);
-
-            if (ReadStoragePermissionCheck == -1 || WriteStoragePermissionCheck == -1 || CameraPermissionCheck == -1 || RecordAudioPermissionCheck == -1) {
-                requestPermissions(new String[]{
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.RECORD_AUDIO
-                }, 1);
-            }
-        }
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+//            int ReadStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE);
+//            int WriteStoragePermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+//            int CameraPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA);
+//            int RecordAudioPermissionCheck = ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO);
+//
+//            if (ReadStoragePermissionCheck == -1 || WriteStoragePermissionCheck == -1 || CameraPermissionCheck == -1 || RecordAudioPermissionCheck == -1) {
+//                requestPermissions(new String[]{
+//                        Manifest.permission.READ_EXTERNAL_STORAGE,
+//                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+//                        Manifest.permission.CAMERA,
+//                        Manifest.permission.RECORD_AUDIO
+//                }, 1);
+//            }
+//        }
 
         // Get files from directory with filter
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
@@ -89,7 +90,7 @@ public class GalleryFragment extends Fragment {
         fileObserver = new FileObserver(directory) {
             @Override
             public void onEvent(int i, String s) {
-                if (s != null) {
+                if (s != null && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
                     refreshHandler.removeCallbacks(refreshList);
                     refreshHandler.postDelayed(refreshList, 1000);
                 }
@@ -158,11 +159,13 @@ public class GalleryFragment extends Fragment {
         });
 
         // Set up GridView
-        Collections.addAll(filesList, getFiles);
-        filesAdapter = new FilesAdapter(getContext(), getActivity(), filesList, tts);
-        galleryGridView.setAdapter(filesAdapter);
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
+            Collections.addAll(filesList, getFiles);
+            filesAdapter = new FilesAdapter(getContext(), getActivity(), filesList, tts);
+            galleryGridView.setAdapter(filesAdapter);
 
-        refreshHandler.postDelayed(refreshList, 1000);
+            refreshHandler.postDelayed(refreshList, 1000);
+        }
 
         // Set up swipeRefresh
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -193,6 +196,12 @@ public class GalleryFragment extends Fragment {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        updateList();
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
         fileObserver.stopWatching();
@@ -219,18 +228,20 @@ public class GalleryFragment extends Fragment {
     };
 
     private void updateList() {
-        // Pull files again, sort it, and reset GridView
-        File[] updatedFiles = new File(directory).listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
-            }
-        });
-        Arrays.sort(updatedFiles, BY_DATE);
-        sortSpinner.setSelection(0);
-        filesList.clear();
-        Collections.addAll(filesList, updatedFiles);
-        filesAdapter.notifyDataSetChanged();
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
+            // Pull files again, sort it, and reset GridView
+            File[] updatedFiles = new File(directory).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+                }
+            });
+            Arrays.sort(updatedFiles, BY_DATE);
+            sortSpinner.setSelection(0);
+            filesList.clear();
+            Collections.addAll(filesList, updatedFiles);
+            filesAdapter.notifyDataSetChanged();
+        }
     }
 
 }
