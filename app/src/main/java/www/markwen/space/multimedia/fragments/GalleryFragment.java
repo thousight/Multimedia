@@ -9,6 +9,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.FileObserver;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -67,6 +68,15 @@ public class GalleryFragment extends Fragment {
     FilesAdapter filesAdapter;
     TextToSpeech tts;
     ArrayList<File> filesList = new ArrayList<>();
+    File[] getFiles;
+    FileObserver fileObserver;
+    Handler refreshHandler = new Handler();
+    Runnable refreshList = new Runnable() {
+        @Override
+        public void run() {
+            updateList();
+        }
+    };
     final String directory = getExternalStorageDirectory() + "/Multimedia/";
 
     @Override
@@ -88,6 +98,28 @@ public class GalleryFragment extends Fragment {
                 }, 1);
             }
         }
+
+        // Get files from directory with filter
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
+            getFiles = new File(directory).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+                }
+            });
+            Arrays.sort(getFiles, BY_DATE);
+        }
+
+        // FileObserver
+        fileObserver = new FileObserver(directory) {
+            @Override
+            public void onEvent(int i, String s) {
+                if (s != null) {
+                    refreshHandler.removeCallbacks(refreshList);
+                    refreshHandler.postDelayed(refreshList, 1000);
+                }
+            }
+        };
     }
 
     @Override
@@ -105,18 +137,6 @@ public class GalleryFragment extends Fragment {
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, sortingOptions);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sortSpinner.setAdapter(spinnerAdapter);
-
-        // Get files from directory with filter
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
-            File[] getFiles = new File(directory).listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
-                }
-            });
-            Collections.addAll(filesList, getFiles);
-            Collections.sort(filesList, BY_DATE);
-        }
 
         sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -161,28 +181,26 @@ public class GalleryFragment extends Fragment {
             }
         });
 
-        // Set up gridview
+        // Set up GridView
+        Collections.addAll(filesList, getFiles);
         filesAdapter = new FilesAdapter(getContext(), getActivity(), filesList, tts);
         galleryGridView.setAdapter(filesAdapter);
+
+        refreshHandler.postDelayed(refreshList, 1000);
 
         return view;
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != -1) {
-            filesList.clear();
-            filesAdapter.notifyDataSetChanged();
-            File[] getFiles = new File(directory).listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
-                }
-            });
-            Collections.addAll(filesList, getFiles);
-            filesAdapter.notifyDataSetChanged();
-        }
+    public void onResume() {
+        super.onResume();
+        fileObserver.startWatching();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        fileObserver.stopWatching();
     }
 
     @Override
@@ -192,7 +210,7 @@ public class GalleryFragment extends Fragment {
         tts.shutdown();
     }
 
-    Comparator<File> BY_DATE = new Comparator<File>() {
+    static Comparator<File> BY_DATE = new Comparator<File>() {
         @Override
         public int compare(File f1, File f2) {
             if (f1.lastModified() > f2.lastModified()) {
@@ -204,5 +222,19 @@ public class GalleryFragment extends Fragment {
             }
         }
     };
+
+    private void updateList() {
+        File[] updatedFiles = new File(directory).listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.toString().endsWith(".mp3") || pathname.toString().endsWith(".mp4") || pathname.toString().endsWith(".jpg");
+            }
+        });
+        Arrays.sort(updatedFiles, BY_DATE);
+        sortSpinner.setSelection(0);
+        filesList.clear();
+        Collections.addAll(filesList, updatedFiles);
+        filesAdapter.notifyDataSetChanged();
+    }
 
 }

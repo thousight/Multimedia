@@ -188,31 +188,31 @@ public class FeaturesFragment extends Fragment {
     }
 
     private void getImageFromResult(Intent data) {
-        Uri imageUrl = data.getData();
-        if (imageUrl != null) {
+        if (data != null) {
+            Uri imageUrl = data.getData();
             // Announce picture to let other photo galleries to update
             Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             mediaScanIntent.setData(imageUrl);
             getActivity().sendBroadcast(mediaScanIntent);
             try {
                 MediaStore.Images.Media.insertImage(getContext().getContentResolver(), directory + filename, "Multimedia-Image", "Multimedia-Image");
-                Toast.makeText(getContext(), "Image saved to gallery", Toast.LENGTH_LONG).show();
                 filename = "";
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }
+        Toast.makeText(getContext(), "Image saved to gallery", Toast.LENGTH_LONG).show();
     }
 
     private void getVideoFromResult(Intent data) {
-        Uri videoUri = data.getData();
-        if (videoUri != null) {
+        if (data != null) {
+            Uri videoUri = data.getData();
             // Announce video to let other photo galleries to update
             Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             mediaScanIntent.setData(videoUri);
             getActivity().sendBroadcast(mediaScanIntent);
-            Toast.makeText(getContext(), "Video saved to gallery", Toast.LENGTH_LONG).show();
         }
+        Toast.makeText(getContext(), "Video saved to gallery", Toast.LENGTH_LONG).show();
     }
     
     private String getFileDirectory(String extension) {
