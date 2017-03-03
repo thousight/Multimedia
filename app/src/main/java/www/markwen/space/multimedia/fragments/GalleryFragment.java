@@ -32,6 +32,7 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -340,6 +341,27 @@ public class GalleryFragment extends Fragment {
                 // Initially disappear
                 stopButton.setVisibility(View.GONE);
 
+                // Set up progress bar
+                progressBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                        if (player != null && b) {
+                            player.seekTo(i);
+                            progressText.setText(i/1000.00 + "/" + (double)player.getDuration()/1000.00);
+                        }
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+                });
+
                 // When play button is clicked
                 playButton.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -356,7 +378,7 @@ public class GalleryFragment extends Fragment {
                         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                             @Override
                             public void onCompletion(MediaPlayer mediaPlayer) {
-                                progressBar.setProgress(100);
+                                progressBar.setProgress(player.getDuration());
                                 progressText.setText((double)player.getDuration()/1000.00 + "/" + (double)player.getDuration()/1000.00);
                                 stopPlaying(isPlaying[0]);
                                 stopButton.setVisibility(View.GONE);
@@ -374,6 +396,14 @@ public class GalleryFragment extends Fragment {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                        progressBar.setMax(player.getDuration());
+
+                        if (progressBar.getProgress() < progressBar.getMax()) {
+                            player.seekTo(progressBar.getProgress());
+                        } else if (progressBar.getProgress() == progressBar.getMax()) {
+                            progressBar.setProgress(0);
+                            player.seekTo(0);
+                        }
                         player.start();
                         isPlaying[0] = true;
 
@@ -383,10 +413,10 @@ public class GalleryFragment extends Fragment {
                             @Override
                             public void run() {
                                 if (player != null) {
-                                    progressBar.setProgress(player.getCurrentPosition() / player.getDuration() * 100);
+                                    progressBar.setProgress(player.getCurrentPosition());
                                     progressText.setText((double)player.getCurrentPosition()/1000.00 + "/" + (double)player.getDuration()/1000.00);
                                 }
-                                handler.postDelayed(this, 500);
+                                handler.postDelayed(this, 250);
                             }
                         });
                     }
